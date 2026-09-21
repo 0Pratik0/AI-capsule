@@ -1,0 +1,27 @@
+{
+  "name": "ai-capsule",
+  "version": "1.0.0",
+  "description": "AI Capsule: a private prompt library (React + Express + SQLite, GitHub OAuth, JWT cookie)",
+  "private": true,
+  "type": "module",
+  "main": "server/index.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "npm install --prefix client --include=dev && npm run build --prefix client",
+    "start": "node server/index.js",
+    "dev:server": "node --watch --env-file-if-exists=.env server/index.js",
+    "dev:client": "npm run dev --prefix client",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.2.0",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "supertest": "^7.1.0"
+  }
+}
