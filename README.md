@@ -4,15 +4,13 @@ A private library for saving and improving AI prompts. Built with React, Node.js
 
 CSE3CWA / CSE5006 Assignment 3, Semester 2 2026.
 
-> **TODO before submission:** replace every line marked TODO with your own details and results.
-
 ## Deployed application
 
 | | |
 |---|---|
-| Public URL | TODO: https://YOUR-APP.onrender.com |
+| Public URL | https://ai-capsule-97v7.onrender.com |
 | Cloud platform | Render (free web service) |
-| Health check | TODO: https://YOUR-APP.onrender.com/api/health |
+| Health check | https://ai-capsule-97v7.onrender.com/api/health |
 
 The free Render service sleeps when idle. The first request after a break can take up to about a minute while it starts.
 
@@ -26,6 +24,8 @@ cp .env.example .env        # then fill in the values (see Environment variables
 npm run build               # installs the React dependencies and builds React into client/dist
 npm run dev:server          # starts Express on http://localhost:3000 and loads .env
 ```
+
+On Windows PowerShell, use `copy .env.example .env` instead of `cp`.  
 
 Open http://localhost:3000. Express serves the built React app and the API from the same address.
 
@@ -48,7 +48,7 @@ npm test
 2. On Render, create a **Web Service** from the repository.
 3. Runtime: Node. Build command: `npm install && npm run build`. Start command: `npm start`.
 4. Add the environment variables listed below in the service's **Environment** tab.
-5. Create a GitHub OAuth App for production with homepage `https://YOUR-APP.onrender.com` and callback URL `https://YOUR-APP.onrender.com/auth/github/callback`, and put its client ID and secret into Render.
+5. Create a GitHub OAuth App for production with homepage `https://ai-capsule-97v7.onrender.com` and callback URL `https://ai-capsule-97v7.onrender.com/auth/github/callback`, and put its client ID and secret into Render.
 
 ## Project structure
 
@@ -167,35 +167,63 @@ Run against the deployed URL.
 
 ```bash
 # Test 1: no authentication
-curl -i https://YOUR-APP.onrender.com/api/capsules
+curl -i https://ai-capsule-97v7.onrender.com/api/capsules
 
 # Test 2: fake / invalid JWT
-curl -i -H "Cookie: token=fake-token-123" https://YOUR-APP.onrender.com/api/capsules
+curl -i -H "Cookie: token=fake-token-123" https://ai-capsule-97v7.onrender.com/api/capsules
 ```
+
+On Windows PowerShell, use `curl.exe` instead of `curl`.
 
 Results obtained:
 
 ```
-TODO: paste the first lines of the real output for each test, e.g.
-HTTP/2 401
-...
+Test 1 (no authentication):
+HTTP/1.1 401 Unauthorized
+Date: Tue, 22 Sep 2026 11:30:11 GMT
+Content-Type: application/json; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+cf-cache-status: DYNAMIC
+etag: W/"18-XPDV80vbMk4yY1/PADG4jYM4rSI"
+rndr-id: 01fe0068-4c15-4e13
+Server: cloudflare
+vary: Accept-Encoding
+x-render-origin-server: Render
+CF-RAY: a3f0f9e2ead5f0cd-MEL
+alt-svc: h3=":443"; ma=86400
+
+{"error":"Unauthorized"}
+
+Test 2 (fake JWT, token=fake-token-123):
+HTTP/1.1 401 Unauthorized
+Date: Tue, 22 Sep 2026 11:30:22 GMT
+Content-Type: application/json; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+cf-cache-status: DYNAMIC
+etag: W/"18-XPDV80vbMk4yY1/PADG4jYM4rSI"
+rndr-id: 40e97d99-de60-4721
+Server: cloudflare
+vary: Accept-Encoding
+x-render-origin-server: Render
+CF-RAY: a3f0fa2aefb377de-MEL
+alt-svc: h3=":443"; ma=86400
+
 {"error":"Unauthorized"}
 ```
+Test 1 shows the API requires authentication. Test 2 shows the server verifies the JWT signature rather than just checking that a cookie is present, since fake-token-123 is rejected too.
 
 ## Known limitation
 
-TODO: pick one and say it in your own words. Suggestions based on how this build actually behaves:
+The main limitation is storage. Render's free web service has a temporary filesystem, so the SQLite database is lost whenever the service restarts, wakes from sleep or is redeployed. Records survive while the service stays running, which is enough to demonstrate full CRUD, but it is not real persistence. Moving to Render PostgreSQL would fix it.
 
-- Data on Render's free tier is ephemeral (see Database and storage).
-- Signing out clears the cookie, but a JWT copied before sign-out stays valid until it expires, because the server does not keep a list of revoked tokens.
-- The first visit after the service has been idle can take up to a minute while Render wakes it up.
+Two smaller ones: signing out clears the cookie, but a JWT copied beforehand stays valid until it expires, since there is no revocation list; and the first visit after an idle period takes up to a minute while Render wakes the service.
 
 ## AI-assisted development
 
-TODO: write this section yourself. It has to reflect what you actually did. The marker wants:
-
-- **Tools used:** e.g. Claude (Anthropic).
-- **One problem found and corrected in AI-generated code or configuration.** Describe a real one you hit.
-- **How OAuth, JWT verification and the protected API were verified:** e.g. the two cURL tests against the deployed URL, a real GitHub login, and `npm test` (which covers no token, fake token, wrong-secret token, expired token, `alg: none`, and the cookie flags set by the callback).
-- **How CRUD and ownership were verified:** e.g. `npm test` signs tokens for two different users and checks that user B gets 404 when trying to update or delete user A's record, and that a `user_id` sent in the body is ignored. Also tested by hand in the deployed app.
-- **One decision you made and can explain:** e.g. serving React and Express from one Render service so the cookie is same-site and no CORS is needed, or returning 404 instead of 403 for another user's record.
+- **Tools used:** Claude (Anthropic).
+- **One problem found and corrected in AI-generated code or configuration.** The first test script, node --test tests/, failed with MODULE_NOT_FOUND on Node 22. It was corrected to node --test tests/*.test.js. I also typed the Render environment variable as GITHUB_CILENT_SECRET. The server's config check stops startup and names any missing variable, so this showed up immediately as "Missing required environment variables: GITHUB_CLIENT_SECRET" instead of failing later during login.
+- **How OAuth, JWT verification and the protected API were verified:** The two cURL tests against the deployed URL, a real GitHub login, and `npm test` (which covers no token, fake token, wrong-secret token, expired token, `alg: none`, and the cookie flags set by the callback).
+- **How CRUD and ownership were verified:**  `npm test` signs tokens for two different users and checks that user B gets 404 when trying to update or delete user A's record, and that a `user_id` sent in the body is ignored. Also tested by hand in the deployed app.
+- **One implementation decision I made and can explain:** I served the React build and the Express API from a single Render service. React is built into client/dist and Express serves those files alongside /api. That keeps everything on one origin, so the token cookie is a normal same-site cookie and no CORS configuration is needed. Two separate services would have meant SameSite=None plus a CORS credentials setup, which is more to configure and more to get wrong.
